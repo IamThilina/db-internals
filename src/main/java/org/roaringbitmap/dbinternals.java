@@ -10,21 +10,30 @@ public class dbinternals {
 
     public static void main(String[] args) {
 
+        HashMap<String, HashMap> database = setUpBitmaps(); // get bitmaps created by column values
         int numberOfConstrains = 5; // number of constraints in the query
-        int threshold = 2; // threshold of the constraints
+        int threshold = 4; // threshold of the constraints
         RoaringBitmap[] conditionBitmaps = new RoaringBitmap[numberOfConstrains];  // array of bitmaps corresponds to constraints in the query
         int[] data = new int[threshold]; // A temporary array to store all combination one by on
         ArrayList<RoaringBitmap> combinedBitmaps = new ArrayList<>();  // bitmaps result from AND operations of combinations
-        int maxCardinality = 15; // get the maximum cardinality of constraint bitmaps
+        int maxCardinality = 0; // get the maximum cardinality of constraint bitmaps
         Iterator iterator; // Iterator object is require to do a OR operation between many bitmaps
         RoaringBitmap finalBitmap; // final bitmap after all operations
 
-        // setup bitmaps
-        conditionBitmaps[0] = RoaringBitmap.bitmapOf(1,2,3,4,5);
-        conditionBitmaps[1] = RoaringBitmap.bitmapOf(3,4,5,6,7);
-        conditionBitmaps[2] = RoaringBitmap.bitmapOf(5,6,7,8,9);
-        conditionBitmaps[3] = RoaringBitmap.bitmapOf(7,8,9,10,11);
-        conditionBitmaps[4] = RoaringBitmap.bitmapOf(9,10,11,12,13);
+        // columns in query
+        String[] columns = { "city", "age", "department", "salary", "sex"};
+
+        // query params
+        String[] params = { "colombo", "25", "cse", "50000", "M"};
+
+        // retrieve necessary bitmaps
+        for (int i=0; i<numberOfConstrains; i++){
+            conditionBitmaps[i] = (RoaringBitmap) database.get(columns[i]).get(params[i]);
+            if(maxCardinality < conditionBitmaps[i].getLongCardinality())
+                maxCardinality = (int) conditionBitmaps[i].getLongCardinality();
+        }
+
+
 
         // find bitmaps result from AND operations of combinations
         combinationUtility(conditionBitmaps, combinedBitmaps, data, 0, numberOfConstrains-1, 0, threshold, maxCardinality);
@@ -46,23 +55,23 @@ public class dbinternals {
 
         // Another combination is formed
         if (index == threshold) {
-            System.out.println("\nCombination No : " + (combinedBitmaps.size() + 1));
+            //System.out.println("\nCombination No : " + (combinedBitmaps.size() + 1));
 
             // add the bitmaps correspond to this combination into localCombination ArrayList
             for (int j=0; j<threshold; j++) {
-                System.out.printf("%d ", data[j]);
+                //System.out.printf("%d ", data[j]);
                 localCombination.add(conditionBitmaps[data[j]-1]);
             }
-            System.out.println();
+            //System.out.println();
 
             // do ALL operation between bitmaps correspond to this combination and add the resulting bitmap to combinedBitmaps List
             itr = localCombination.iterator();
             combinedBitmaps.add(RoaringBitmap.and(itr, 1, maxCardinality));
 
             for(int i : combinedBitmaps.get(combinedBitmaps.size()-1)) {
-                System.out.print(i + ", ");
+                //System.out.print(i + ", ");
             }
-            System.out.println();
+            //System.out.println();
             return;
         }
 
