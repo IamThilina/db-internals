@@ -1,7 +1,10 @@
 package org.roaringbitmap;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
 
 public class dbinternals {
 
@@ -71,5 +74,44 @@ public class dbinternals {
             data[index] = i+1;
             combinationUtility(conditionBitmaps, combinedBitmaps, data, i+1, end, index+1, threshold, maxCardinality);
         }
+    }
+
+    static HashMap<String, HashMap> setUpBitmaps(){
+        String[] column_names = {"age","city","salary","department","sex"};
+        HashMap<String,HashMap> database = new HashMap<>();
+
+        for(int column_count = 0;column_count<column_names.length;column_count++)
+        {
+            HashMap<String,RoaringBitmap> attribute_bitmap = new HashMap<>();
+            attribute_bitmap.clear();
+            ArrayList<String> column = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new FileReader("src/"+column_names[column_count]+".txt"))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    column.add(line);
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Set result = new HashSet(column);
+            for (Object s : result) {
+                ArrayList<Integer> exist_ids = new ArrayList<>();
+                for(int i=0;i<column.size();i++)
+                {
+                    if(s.toString().equals(column.get(i)))
+                    {
+                        exist_ids.add(i+1);
+                    }
+                }
+                RoaringBitmap rr = RoaringBitmap.bitmapOf(exist_ids);
+                exist_ids.clear();
+                attribute_bitmap.put(s.toString(),rr);
+            }
+            database.put(column_names[column_count], attribute_bitmap);
+            column.clear();
+        }
+        return database;
     }
 }

@@ -5,6 +5,7 @@
 package org.roaringbitmap;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap;
@@ -436,6 +437,27 @@ public class RoaringBitmap implements Cloneable, Serializable, Iterable<Integer>
     ans.add(dat);
     return ans;
   }
+
+  /**
+   * Generate a bitmap with the specified values set to true. The provided integers values don't
+   * have to be in sorted order, but it may be preferable to sort them from a performance point of
+   * view.
+   *
+   * @param data set values
+   * @return a new bitmap
+   */
+  public static RoaringBitmap bitmapOf(final ArrayList<Integer> data) {
+    int[] dat = new int[data.size()];
+    for(int i=0;i<data.size();i++)
+    {
+      dat[i] = data.get(i);
+    }
+    final RoaringBitmap ans = new RoaringBitmap();
+    ans.add(dat);
+    return ans;
+  }
+
+
 
   /**
    * Complements the bits in the given range, from rangeStart (inclusive) rangeEnd (exclusive). The
