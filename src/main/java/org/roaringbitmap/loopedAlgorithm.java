@@ -6,7 +6,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
-public class dbinternals {
+/**
+ * Created by thilina on 3/3/17.
+ */
+public class loopedAlgorithm {
 
     public static void main(String[] args) {
 
@@ -34,18 +37,17 @@ public class dbinternals {
                 maxCardinality = (int) conditionBitmaps[i].getLongCardinality();
         }
 
-
+        // initialize combinedBitmaps
+        for (int i = 0; i<threshold; i++) {
+            combinedBitmaps.add(new RoaringBitmap());
+        }
 
         startTime = System.nanoTime();
-        // find bitmaps result from AND operations of combinations
-        combinationUtility(conditionBitmaps, combinedBitmaps, data, 0, numberOfConstrains-1, 0, threshold, maxCardinality);
+        // find rows satisfying minimum number of constraints
+        finalBitmap = findRowIDs(conditionBitmaps, combinedBitmaps);
         duration = System.nanoTime() - startTime;
 
-        // find the union of bitmaps result from AND operations of combinations
-        iterator = combinedBitmaps.iterator();
-        finalBitmap = RoaringBitmap.or(iterator, 1, maxCardinality);
-
-        System.out.println("\nFinal Results");
+        //System.out.println("\nFinal Results");
         for(int i : finalBitmap) {
             System.out.print(i + ", ");
         }
@@ -53,41 +55,26 @@ public class dbinternals {
         System.out.println("\n\nExecution Time in ms : " + duration/1000);
     }
 
-    static void combinationUtility(RoaringBitmap conditionBitmaps[], ArrayList<RoaringBitmap> combinedBitmaps, int data[], int start, int end, int index, int threshold, int maxCardinality) {
+    static RoaringBitmap findRowIDs(RoaringBitmap conditionBitmaps[], ArrayList<RoaringBitmap> combinedBitmaps){
 
-        ArrayList<RoaringBitmap> localCombination = new ArrayList<>();  // to hold the bitmaps of a particular combination
-        Iterator itr; // Iterator object is required to do ALL operation between many bitmaps
+        int N = conditionBitmaps.length;
+        int threshold = combinedBitmaps.size();
+        int min = threshold;
+        RoaringBitmap temp;
+        combinedBitmaps.set(0, conditionBitmaps[0]);
 
-        // Another combination is formed
-        if (index == threshold) {
-            //System.out.println("\nCombination No : " + (combinedBitmaps.size() + 1));
-
-            // add the bitmaps correspond to this combination into localCombination ArrayList
-            for (int j=0; j<threshold; j++) {
-                //System.out.printf("%d ", data[j]);
-                localCombination.add(conditionBitmaps[data[j]-1]);
+        for (int i=2; i<N; i++){
+            if(i < threshold)
+                min = i;
+            for (int j=min; j>1; j--){
+                temp = RoaringBitmap.and(combinedBitmaps.get(j-2), conditionBitmaps[i-1]);
+                combinedBitmaps.get(j-1).or(temp);
             }
-            //System.out.println();
-
-            // do ALL operation between bitmaps correspond to this combination and add the resulting bitmap to combinedBitmaps List
-            itr = localCombination.iterator();
-            combinedBitmaps.add(RoaringBitmap.and(itr, 1, maxCardinality));
-
-            for(int i : combinedBitmaps.get(combinedBitmaps.size()-1)) {
-                //System.out.print(i + ", ");
-            }
-            //System.out.println();
-            return;
+            min = threshold;
+            combinedBitmaps.get(0).or(conditionBitmaps[i-1]);
         }
 
-        /*replace index with all possible elements. The condition
-         "end-i+1 >= r-index" makes sure that including one element
-         at index will make a combination with remaining elements
-         at remaining positions*/
-        for (int i=start; i<=end && end-i+1 >= threshold-index; i++) {
-            data[index] = i+1;
-            combinationUtility(conditionBitmaps, combinedBitmaps, data, i+1, end, index+1, threshold, maxCardinality);
-        }
+        return combinedBitmaps.get(threshold-1);
     }
 
     static HashMap<String, HashMap> setUpBitmaps(){
@@ -128,4 +115,5 @@ public class dbinternals {
         }
         return database;
     }
+
 }
