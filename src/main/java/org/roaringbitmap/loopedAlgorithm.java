@@ -16,7 +16,7 @@ public class loopedAlgorithm {
     public static void main(String[] args) {
 
         HashMap<String, HashMap> database = setUpBitmaps(); // get bitmaps created by column values
-        int numberOfConstrains = 5; // number of constraints in the query
+        int numberOfConstrains = 8; // number of constraints in the query
         int threshold = 3; // threshold of the constraints
         RoaringBitmap[] conditionBitmaps = new RoaringBitmap[numberOfConstrains];  // array of bitmaps corresponds to constraints in the query
         ArrayList<RoaringBitmap> combinedBitmaps = new ArrayList<>();  // bitmaps result from AND operations of combinations
@@ -26,10 +26,10 @@ public class loopedAlgorithm {
         long duration;
 
         // columns in query
-        String[] columns = { "c_preferred_cust_flag", "c_birth_country", "c_birth_month", "c_birth_day", "c_salutation"};
+        String[] columns = { "c_preferred_cust_flag", "c_birth_country", "c_birth_month", "c_birth_day", "c_salutation", "c_birth_yea", "c_first_name", "c_first_sales_date_sk"};
 
         // query params
-        String[] params = { "Y", "SPAIN", "2", "3", "Miss"};
+        String[] params = { "Y", "SPAIN", "2", "3", "Miss", "1930", "John", "2451092"};
 
         // retrieve necessary bitmaps
         for (int i=0; i<numberOfConstrains; i++){
@@ -41,7 +41,7 @@ public class loopedAlgorithm {
         Scanner s = new Scanner(System.in);
         while (true) {
             System.out.print("Enter the threshold size : ");
-
+            threshold = s.nextInt();
             // initialize combinedBitmaps
             for (int i = 0; i < threshold; i++) {
                 combinedBitmaps.add(new RoaringBitmap());
