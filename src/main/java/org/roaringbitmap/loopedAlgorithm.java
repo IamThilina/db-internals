@@ -1,5 +1,7 @@
 package org.roaringbitmap;
 
+import au.com.bytecode.opencsv.CSVReader;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -17,18 +19,17 @@ public class loopedAlgorithm {
         int numberOfConstrains = 5; // number of constraints in the query
         int threshold = 3; // threshold of the constraints
         RoaringBitmap[] conditionBitmaps = new RoaringBitmap[numberOfConstrains];  // array of bitmaps corresponds to constraints in the query
-        int[] data = new int[threshold]; // A temporary array to store all combination one by on
         ArrayList<RoaringBitmap> combinedBitmaps = new ArrayList<>();  // bitmaps result from AND operations of combinations
         int maxCardinality = 0; // get the maximum cardinality of constraint bitmaps
-        Iterator iterator; // Iterator object is require to do a OR operation between many bitmaps
         RoaringBitmap finalBitmap; // final bitmap after all operations
-        final long startTime, duration; // variables for time calculations
+        long startTime; // variables for time calculations
+        long duration;
 
         // columns in query
-        String[] columns = { "city", "age", "department", "salary", "sex"};
+        String[] columns = { "c_preferred_cust_flag", "c_birth_country", "c_birth_month", "c_birth_day", "c_salutation"};
 
         // query params
-        String[] params = { "colombo", "25", "cse", "50000", "M"};
+        String[] params = { "Y", "SPAIN", "2", "3", "Miss"};
 
         // retrieve necessary bitmaps
         for (int i=0; i<numberOfConstrains; i++){
@@ -37,22 +38,28 @@ public class loopedAlgorithm {
                 maxCardinality = (int) conditionBitmaps[i].getLongCardinality();
         }
 
-        // initialize combinedBitmaps
-        for (int i = 0; i<threshold; i++) {
-            combinedBitmaps.add(new RoaringBitmap());
+        Scanner s = new Scanner(System.in);
+        while (true) {
+            System.out.print("Enter the threshold size : ");
+
+            // initialize combinedBitmaps
+            for (int i = 0; i < threshold; i++) {
+                combinedBitmaps.add(new RoaringBitmap());
+            }
+
+            startTime = System.nanoTime();
+            // find rows satisfying minimum number of constraints
+            finalBitmap = findRowIDs(conditionBitmaps, combinedBitmaps);
+            duration = System.nanoTime() - startTime;
+
+            //System.out.println("\nFinal Results");
+            for (int i : finalBitmap) {
+                System.out.print(i + ", ");
+            }
+
+            System.out.println("\n\nExecution Time in ms : " + duration / 1000000);
+            combinedBitmaps.clear();
         }
-
-        startTime = System.nanoTime();
-        // find rows satisfying minimum number of constraints
-        finalBitmap = findRowIDs(conditionBitmaps, combinedBitmaps);
-        duration = System.nanoTime() - startTime;
-
-        //System.out.println("\nFinal Results");
-        for(int i : finalBitmap) {
-            System.out.print(i + ", ");
-        }
-
-        System.out.println("\n\nExecution Time in ms : " + duration/1000);
     }
 
     static RoaringBitmap findRowIDs(RoaringBitmap conditionBitmaps[], ArrayList<RoaringBitmap> combinedBitmaps){
@@ -78,24 +85,28 @@ public class loopedAlgorithm {
     }
 
     static HashMap<String, HashMap> setUpBitmaps(){
-        String[] column_names = {"age","city","salary","department","sex"};
-        HashMap<String,HashMap> database = new HashMap<>();
-
+        String[] column_names = {"c_customer_sk", "c_customer_id", "c_current_cdemo_sk", "c_current_hdemo_sk", "c_current_addr_sk", "c_first_shipto_date_sk", "c_first_sales_date_sk", "c_salutation", "c_first_name", "c_last_name", "c_preferred_cust_flag", "c_birth_day", "c_birth_month", "c_birth_year", "c_birth_country"};
+        HashMap<String, HashMap> database = new HashMap<>();
+        HashMap<String,RoaringBitmap> attribute_bitmap = new HashMap<>();
+        attribute_bitmap.clear();
+        ArrayList<String> column = new ArrayList<>();
         for(int column_count = 0;column_count<column_names.length;column_count++)
         {
-            HashMap<String,RoaringBitmap> attribute_bitmap = new HashMap<>();
-            attribute_bitmap.clear();
-            ArrayList<String> column = new ArrayList<>();
-            try (BufferedReader br = new BufferedReader(new FileReader("src/"+column_names[column_count]+".txt"))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    column.add(line);
+            try {
+                //csv file containing data
+                String strFile = "/home/thilina/Desktop/SEMESTER - 8/DB Internals/customer.csv";
+                CSVReader reader = new CSVReader(new FileReader(strFile));
+                String [] nextLine;
+                int lineNumber = 0;
+                while ((nextLine = reader.readNext()) != null) {
+                    column.add(nextLine[column_count]);
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
             Set result = new HashSet(column);
             for (Object s : result) {
                 ArrayList<Integer> exist_ids = new ArrayList<>();
@@ -113,6 +124,7 @@ public class loopedAlgorithm {
             database.put(column_names[column_count], attribute_bitmap);
             column.clear();
         }
+        //System.out.println(database);
         return database;
     }
 
